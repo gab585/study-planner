@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Planner & Task Manager</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #0b1020;
+      color: #e7f0ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #6ee7b7;
+      margin-bottom: 15px;
+    }
+    .container {
+      background: #101628;
+      padding: 20px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    input, select, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+    }
+    input, select {
+      flex: 1;
+      background: #181f36;
+      color: #e7f0ff;
+    }
+    button {
+      background: linear-gradient(90deg,#6ee7b7,#7c6cff);
+      color: #021019;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 15px;
+    }
+    li {
+      background: #181f36;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .task-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .overdue {
+      color: #ff7c7c;
+      font-size: 0.9em;
+    }
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .filter-section {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Study Planner</h1>
+  <div class="container">
+    <div class="row">
+      <input type="text" id="taskTitle" placeholder="Task Title">
+      <input type="text" id="taskSubject" placeholder="Subject">
+    </div>
+    <div class="row">
+      <select id="taskPriority">
+        <option value="Low">Low Priority</option>
+        <option value="Medium">Medium Priority</option>
+        <option value="High">High Priority</option>
+      </select>
+      <input type="date" id="taskDueDate">
+      <button onclick="addTask()">Add Task</button>
+    </div>
+
+    <div class="filter-section">
+      <input type="text" id="filterSubject" placeholder="Filter by Subject">
+      <button onclick="filterTasks()">Filter</button>
+      <button onclick="resetFilter()">Reset</button>
+    </div>
+
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    let filterSubject = '';
+
+    function updateUI() {
+      const list = document.getElementById('taskList');
+      list.innerHTML = '';
+
+      const now = new Date();
+
+      tasks
+        .filter(t => !filterSubject || t.subject.toLowerCase().includes(filterSubject.toLowerCase()))
+        .forEach((task, index) => {
+          const li = document.createElement('li');
+
+          const dueDate = new Date(task.dueDate);
+          const overdue = dueDate < now && !task.completed;
+
+          li.innerHTML = `
+            <div class="task-info ${task.completed ? 'completed' : ''}">
+              <strong>${task.title}</strong>
+              <span>Subject: ${task.subject}</span>
+              <span>Priority: ${task.priority}</span>
+              <span>Due: ${task.dueDate}</span>
+              ${overdue ? '<span class="overdue">Overdue!</span>' : ''}
+            </div>
+            <div>
+              <button onclick="toggleComplete(${index})">${task.completed ? 'Undo' : 'Complete'}</button>
+              <button onclick="removeTask(${index})">Delete</button>
+            </div>
+          `;
+
+          list.appendChild(li);
+        });
+
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function addTask() {
+      const title = document.getElementById('taskTitle').value.trim();
+      const subject = document.getElementById('taskSubject').value.trim();
+      const priority = document.getElementById('taskPriority').value;
+      const dueDate = document.getElementById('taskDueDate').value;
+
+      if (!title || !subject || !dueDate) {
+        return alert('Please fill in all fields');
+      }
+
+      tasks.push({ title, subject, priority, dueDate, completed: false });
+
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('taskSubject').value = '';
+      document.getElementById('taskDueDate').value = '';
+
+      updateUI();
+    }
+
+    function toggleComplete(index) {
+      tasks[index].completed = !tasks[index].completed;
+      updateUI();
+    }
+
+    function removeTask(index) {
+      tasks.splice(index, 1);
+      updateUI();
+    }
+
+    function filterTasks() {
+      filterSubject = document.getElementById('filterSubject').value.trim();
+      updateUI();
+    }
+
+    function resetFilter() {
+      filterSubject = '';
+      document.getElementById('filterSubject').value = '';
+      updateUI();
+    }
+
+    window.onload = updateUI;
+  </script>
+</body>
+</html>
